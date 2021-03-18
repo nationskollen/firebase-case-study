@@ -157,5 +157,22 @@ async function removeTestData() {
     removeDocuments(collections.productSuppliers, removeProductSupplier);
 }
 
-//removeTestData();
-addTestData();
+// Prints object in the database
+// takes in what collection node to loop over
+async function printDocuments(collectionName, typeOfNodes) {
+  const collection = await db.collection(collectionName).get();
+  console.log("============== " + typeOfNodes + " ==================");
+
+  collection.forEach((doc) => {
+    let data = doc.data();
+    let id = doc.id;
+    console.log(id + " : " + JSON.stringify(data, null, '\t'));
+  });
+}
+
+// removeTestData();
+// addTestData();
+printDocuments(collections.orders, "Orders");
+printDocuments(collections.productSuppliers, "ProductSuppliers");
+printDocuments(collections.products, "Products");
+printDocuments(collections.suppliers, "Suppliers");
