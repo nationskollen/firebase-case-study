@@ -157,5 +157,135 @@ async function removeTestData() {
     removeDocuments(collections.productSuppliers, removeProductSupplier);
 }
 
+
+// Lists all suppliers name, Id and phone. 
+async function listSuppliers() {
+    try {
+        const readValue = await db.collection(collections.suppliers).get();
+         console.log("\n Listing Suppliers: \n");
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            console.log("Supplier: "+ info.name + " Id: " + info.supplierId + " Phone: " + info.phone);
+        });
+        }
+        
+    catch(error) {
+        console.log("ReadData error:", error);
+    }
+}
+
+async function listProducts() {
+    try {
+        const readValue = await db.collection(collections.products).get();
+        console.log("\n Listing products: \n");
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            console.log("Price: "+ info.price + " Product Code " + info.productCode + " ID: " + info.productId + " Quantity: " + info.quantity);
+        });
+        }
+    
+    catch(error) {
+        console.log("ReadData error:", error);
+    }
+}
+
+async function listOrders() {
+    try {
+        const readValue = await db.collection(collections.orders).get();
+        console.log("\n Listing orders: \n");
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            console.log("Order ID: " + info.orderId + " Product id: "+ info.productId + " Quantity: " + info.quantity);
+        });
+        }
+    
+    catch(error) {
+        console.log("ReadData error:", error);
+    }
+}
+
+async function listProductSuppliers() {
+    try {
+        const readValue = await db.collection(collections.productSuppliers).get();
+        console.log("\n Listing product suppliers: \n");
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            console.log("Product ID: " + info.productId + " Supplier ID "+ info.supplierId );
+        });
+        }
+    
+    catch(error) {
+        console.log("ReadData error:", error);
+    }
+}
+
+
+
+
+async function readSupplier(suppId) {
+    try {
+        const readValue = await db.collection(collections.suppliers).get();
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            if(info.supplierId == suppId) {
+                console.log("Supplier: " + info.name + " Phone: " + info.phone);
+        }
+        });
+        } catch(error) {
+            console.log("Readsupplier error:", error);
+        }
+}
+
+async function readOrder(ordId) {
+    try {
+        const readValue = await db.collection(collections.orders).get();
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            if(info.orderId == ordId) {
+                console.log("Product ID: " + info.productId + " Quantity: " + info.quantity);
+        }
+        });
+        } catch(error) {
+            console.log("Readsupplier error:", error);
+        }
+}
+
+async function readProduct(prodId) {
+    try {
+        const readValue = await db.collection(collections.products).get();
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            if(info.productId == prodId) {
+                console.log("Price " + info.price + " Product code " + info.productCode + " Quantity: " + info.quantity);
+        }
+        });
+        } catch(error) {
+            console.log("Readsupplier error:", error);
+        }
+}
+
+async function readProductSuppliers(prodId) {
+    try {
+        const readValue = await db.collection(collections.productSuppliers).get();
+        readValue.forEach((doc) => {
+            var info = doc.data();
+            if(info.productId == prodId) {
+                console.log("Supplier ID :" + info.supplierId);
+        }
+        });
+        } catch(error) {
+            console.log("Readsupplier error:", error);
+        }
+}
+
+
+
 //removeTestData();
-addTestData();
+listSuppliers();
+listProducts();
+listOrders();
+listProductSuppliers();
+//readSupplier(262);
+//readOrder(100);
+//readProduct(207);
+//readProductSuppliers(471);
