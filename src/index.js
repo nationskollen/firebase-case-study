@@ -27,14 +27,14 @@ const collections = {
 
 // Function to generate a random ID for a product/supplier etc
 function genID() {
-    return Math.floor(Math.random() * (1000 - 10) + 10); 
+    return Math.floor(Math.random() * (1000 - 10) + 10);
 }
 
 // Function to generate a random ID for a product/supplier etc
 function genProductCode() {
     // Math.random should be unique because of its seeding algorithm.
     // Convert it to base 36 (numbers + letters), and grab the first 9 characters
-    // after the decimal. 
+    // after the decimal.
     return Math.random().toString(36).substr(2, 9);
 }
 
@@ -58,7 +58,7 @@ async function removeSupplier(supplierId) {
         await db.collection(collections.suppliers).doc(supplierId.toString()).delete();
     } catch (error) {
         console.error('Could not remove supplier: ', error);
-    }   
+    }
 }
 
 async function addProduct(productId, productCode, quantity, price) {
@@ -134,7 +134,7 @@ async function addTestData() {
     const productId = genID();
     const supplierId = genID();
     const orderId = genID();
-    
+
     addProduct(productId, productCode, 100, 120);
     addOrder(orderId, productId, 50);
     addSupplier(supplierId, "Random supplier", "4204206969");
@@ -144,7 +144,7 @@ async function addTestData() {
 // Removes all documents inside a collection
 async function removeDocuments(collectionName, removeFunction) {
     const collection = await db.collection(collectionName).get();
-    
+
     collection.forEach((doc) => {
         removeFunction(doc.id);
     });
@@ -157,8 +157,7 @@ async function removeTestData() {
     removeDocuments(collections.productSuppliers, removeProductSupplier);
 }
 
-
-// Lists all suppliers name, Id and phone. 
+// Lists all suppliers name, Id and phone.
 async function listSuppliers() {
     try {
         const readValue = await db.collection(collections.suppliers).get();
@@ -167,9 +166,7 @@ async function listSuppliers() {
             var info = doc.data();
             console.log("Supplier: "+ info.name + " Id: " + info.supplierId + " Phone: " + info.phone);
         });
-        }
-        
-    catch(error) {
+    } catch(error) {
         console.log("ReadData error:", error);
     }
 }
@@ -182,9 +179,7 @@ async function listProducts() {
             var info = doc.data();
             console.log("Price: "+ info.price + " Product Code " + info.productCode + " ID: " + info.productId + " Quantity: " + info.quantity);
         });
-        }
-    
-    catch(error) {
+    } catch(error) {
         console.log("ReadData error:", error);
     }
 }
@@ -197,9 +192,7 @@ async function listOrders() {
             var info = doc.data();
             console.log("Order ID: " + info.orderId + " Product id: "+ info.productId + " Quantity: " + info.quantity);
         });
-        }
-    
-    catch(error) {
+    } catch(error) {
         console.log("ReadData error:", error);
     }
 }
@@ -212,80 +205,81 @@ async function listProductSuppliers() {
             var info = doc.data();
             console.log("Product ID: " + info.productId + " Supplier ID "+ info.supplierId );
         });
-        }
-    
-    catch(error) {
+    } catch(error) {
         console.log("ReadData error:", error);
     }
 }
 
-
-
-
 async function readSupplier(suppId) {
     try {
-        const readValue = await db.collection(collections.suppliers).get();
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            if(info.supplierId == suppId) {
-                console.log("Supplier: " + info.name + " Phone: " + info.phone);
+        const readValue = await db.collection(collections.suppliers).doc(suppId.toString()).get();
+
+        if (!readValue.exists) {
+            console.log(`No such supplier id: ${suppId}`);
+            return;
         }
-        });
-        } catch(error) {
-            console.log("Readsupplier error:", error);
-        }
+
+        const { name, phone } = readValue.data();
+        console.log("Supplier: " + name + " Phone: " + phone);
+    } catch(error) {
+        console.log("Readsupplier error:", error);
+    }
 }
 
 async function readOrder(ordId) {
     try {
-        const readValue = await db.collection(collections.orders).get();
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            if(info.orderId == ordId) {
-                console.log("Product ID: " + info.productId + " Quantity: " + info.quantity);
+        const readValue = await db.collection(collections.orders).doc(ordId.toString()).get();
+
+        if (!readValue.exists) {
+            console.log(`No such order id: ${ordId}`);
+            return;
         }
-        });
-        } catch(error) {
-            console.log("Readsupplier error:", error);
-        }
+
+        const { productId, quantity } = readValue.data();
+        console.log("Product ID: " + productId + " Quantity: " + quantity);
+    } catch(error) {
+        console.log("Readsupplier error:", error);
+    }
 }
 
 async function readProduct(prodId) {
     try {
-        const readValue = await db.collection(collections.products).get();
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            if(info.productId == prodId) {
-                console.log("Price " + info.price + " Product code " + info.productCode + " Quantity: " + info.quantity);
+        const readValue = await db.collection(collections.products).doc(prodId.toString()).get();
+
+        if (!readValue.exists) {
+            console.log(`No such product id: ${prodId}`);
+            return;
         }
-        });
-        } catch(error) {
-            console.log("Readsupplier error:", error);
-        }
+
+        const { price, productCode, quantity } = readValue.data();
+        console.log("Price " + price + " Product code " + productCode + " Quantity: " + quantity);
+    } catch(error) {
+        console.log("Readsupplier error:", error);
+    }
 }
 
 async function readProductSuppliers(prodId) {
     try {
-        const readValue = await db.collection(collections.productSuppliers).get();
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            if(info.productId == prodId) {
-                console.log("Supplier ID :" + info.supplierId);
+        const readValue = await db.collection(collections.productSuppliers).doc(prodId.toString()).get();
+
+        if (!readValue.exists) {
+            console.log(`No such product supplier id: ${prodId}`);
+            return;
         }
-        });
-        } catch(error) {
-            console.log("Readsupplier error:", error);
-        }
+
+        const { supplierId } = readValue.data();
+        console.log("Supplier ID :" + supplierId);
+    } catch(error) {
+        console.log("Readsupplier error:", error);
+    }
 }
 
-
-
 //removeTestData();
-listSuppliers();
-listProducts();
-listOrders();
-listProductSuppliers();
-//readSupplier(262);
-//readOrder(100);
-//readProduct(207);
-//readProductSuppliers(471);
+// listSuppliers();
+// listProducts();
+// listOrders();
+// listProductSuppliers();
+readSupplier(126);
+readOrder(100);
+readProduct(207);
+readProductSuppliers(471);
