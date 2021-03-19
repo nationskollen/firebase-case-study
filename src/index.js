@@ -23,10 +23,8 @@ const collections = {
     suppliers: 'Suppliers',
 };
 
-// TODO: Add functions for updating all of the above
-
 // Function to generate a random ID for a product/supplier etc
-function genID() {
+function genId() {
     return Math.floor(Math.random() * (1000 - 10) + 10);
 }
 
@@ -38,248 +36,114 @@ function genProductCode() {
     return Math.random().toString(36).substr(2, 9);
 }
 
-async function addSupplier(supplierId, name, phone) {
+async function create(collectionName, docId, data) {
     try {
         // Calling .add() automatically gives the document a unique id.
-        // To give the new document a custom name, you use .doc(<name>).set(<data>)
-        // TODO: Maybe check if the document exists before setting the data?
-        await db.collection(collections.suppliers).doc(supplierId.toString()).set({
-            supplierId,
-            name,
-            phone,
-        });
+        // To give the new document a custom name, you use .doc(<name>).set(<data>).
+        // There is no need to first check if the document exists, since .set() will
+        // overwrite any existing data.
+        await db.collection(collectionName).doc(docId.toString()).set(data);
     } catch (error) {
-        console.error('Could not add supplier:', error);
+        console.error(`Could not create document '${docId} in '${collectionName}':`, error);
     }
 }
 
-async function removeSupplier(supplierId) {
+async function read(collectionName, docId) {
     try {
-        await db.collection(collections.suppliers).doc(supplierId.toString()).delete();
-    } catch (error) {
-        console.error('Could not remove supplier: ', error);
+        const doc = await db.collection(collectionName).doc(docId.toString()).get();
+
+        if (doc.exists) {
+            return doc.data();
+        } else {
+            console.log(`No such document: ${docId}`);
+        }
+    } catch(error) {
+        console.error(`Could not read document '${docId} in ${collectionName}'`);
+    }
+
+    return null;
+}
+
+async function update(collectionName, docId, newData) {
+    try {
+        await db.collection(collectionName).doc(docId.toString()).update(newData);
+    } catch(error) {
+        console.error(`Could not update document '${docId} in ${collectionName}'`);
     }
 }
 
-async function addProduct(productId, productCode, quantity, price) {
+// delete is a reserved word in javascript, so we use del instead
+async function del(collectionName, docId) {
     try {
-        // Calling .add() automatically gives the document a unique id.
-        // To give the new document a custom name, you use .doc(<name>).set(<data>)
-        // TODO: Maybe check if the document exists before setting the data?
-        await db.collection(collections.products).doc(productId.toString()).set({
-            productId,
-            productCode,
-            quantity,
-            price,
-        });
-    } catch (error) {
-        console.error('Could not add product:', error);
+        await db.collection(collectionName).doc(docId.toString()).delete();
+    } catch(error) {
+        console.error(`Could not update document '${docId} in ${collectionName}'`);
     }
 }
 
-async function removeProduct(productId) {
+async function dump(collectionName) {
     try {
-        // calling .delete() will remove the product from the database db
-        await db.collection(collections.products).doc(productId.toString()).delete();
-    } catch (error) {
-        console.error('Could not remove product:', error);
-    }
-}
+        const collection = await db.collection(collectionName).get();
+        console.log(`============== ${collectionName} ==============`);
 
-// Add new order
-async function addOrder(orderId, productId, quantity) {
-    try {
-        // Calling .add() automatically gives the document a unique id.
-        // To give the new document a custom name, you use .doc(<name>).set(<data>)
-        // TODO: Maybe check if the document exists before setting the data?
-        await db.collection(collections.orders).doc(orderId.toString()).set({
-            orderId,
-            productId,
-            quantity
-        });
-    } catch (error) {
-        console.error('Could not add order:', error);
-    }
-}
-
-async function removeOrder(orderId) {
-    try {
-        await db.collection(collections.orders).doc(orderId.toString()).delete();
-    } catch (error) {
-        console.error('Could not remove order: ', error);
-    }
-}
-
-async function addProductSupplier(productId, supplierId) {
-    try {
-        await db.collection(collections.productSuppliers).doc(productId.toString()).set( {
-            productId,
-            supplierId
+        collection.forEach((doc) => {
+            console.log(`${doc.id}: ${JSON.stringify(doc.data(), null, '\t')}`);
         });
     } catch(error) {
-        console.error('Could not add Product supplier: ', error);
-    }
-}
-
-async function removeProductSupplier(productId) {
-    try {
-        await db.collection(collections.productSuppliers).doc(productId.toString()).delete();
-    } catch (error) {
-        console.error('Could not remove supplier: ', error);
+        console.log(`Could not fetch collection: ${collectionName}:`, error);
     }
 }
 
 async function addTestData() {
-    const productCode = genProductCode();
-    const productId = genID();
-    const supplierId = genID();
-    const orderId = genID();
+    const productId = genId();
+    const supplierId = genId();
 
-    addProduct(productId, productCode, 100, 120);
-    addOrder(orderId, productId, 50);
-    addSupplier(supplierId, "Random supplier", "4204206969");
-    addProductSupplier(productId, supplierId);
-}
+    // The productId is the key of the document and does not have
+    // to be stored in the document data.
+    await create(collections.products, productId, {
+        productCode: genProductCode(),
+        quantity: 10,
+        price: 200,
+    });
 
-// Removes all documents inside a collection
-async function removeDocuments(collectionName, removeFunction) {
-    const collection = await db.collection(collectionName).get();
+    await create(collections.suppliers, supplierId, {
+        name: 'Krabby AB',
+        phone: '+46202020202',
+    });
 
-    collection.forEach((doc) => {
-        removeFunction(doc.id);
+    await create(collections.orders, genId(), {
+        productId,
+        quantity: 5,
+    });
+
+    await create(collections.productSuppliers, productId, {
+        supplierId,
     });
 }
 
 async function removeTestData() {
-    removeDocuments(collections.orders, removeOrder);
-    removeDocuments(collections.products, removeProduct);
-    removeDocuments(collections.suppliers, removeSupplier);
-    removeDocuments(collections.productSuppliers, removeProductSupplier);
-}
+    for (const collectionName of Object.values(collections)) {
+        const collection = await db.collection(collectionName).get();
 
-// Lists all suppliers name, Id and phone.
-async function listSuppliers() {
-    try {
-        const readValue = await db.collection(collections.suppliers).get();
-         console.log("\n Listing Suppliers: \n");
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            console.log("Supplier: "+ info.name + " Id: " + info.supplierId + " Phone: " + info.phone);
-        });
-    } catch(error) {
-        console.log("ReadData error:", error);
+        // To remove documents from a collection, you must do so manually.
+        // Collections inside documents will not be deleted automatically.
+        // In our case, the documents does not have any subcollections.
+        collection.forEach((doc) => del(collectionName, doc.id));
     }
 }
 
-async function listProducts() {
-    try {
-        const readValue = await db.collection(collections.products).get();
-        console.log("\n Listing products: \n");
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            console.log("Price: "+ info.price + " Product Code " + info.productCode + " ID: " + info.productId + " Quantity: " + info.quantity);
-        });
-    } catch(error) {
-        console.log("ReadData error:", error);
-    }
-}
+// CREATE
+// addTestData();
 
-async function listOrders() {
-    try {
-        const readValue = await db.collection(collections.orders).get();
-        console.log("\n Listing orders: \n");
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            console.log("Order ID: " + info.orderId + " Product id: "+ info.productId + " Quantity: " + info.quantity);
-        });
-    } catch(error) {
-        console.log("ReadData error:", error);
-    }
-}
+// READ
+// async function test() {
+//     const data = await read(collections.products, 412);
+//     console.log(data);
+// }
+// test()
 
-async function listProductSuppliers() {
-    try {
-        const readValue = await db.collection(collections.productSuppliers).get();
-        console.log("\n Listing product suppliers: \n");
-        readValue.forEach((doc) => {
-            var info = doc.data();
-            console.log("Product ID: " + info.productId + " Supplier ID "+ info.supplierId );
-        });
-    } catch(error) {
-        console.log("ReadData error:", error);
-    }
-}
+// UPDATE
+// update(collections.orders, 603, { quantity: 0 });
 
-async function readSupplier(suppId) {
-    try {
-        const readValue = await db.collection(collections.suppliers).doc(suppId.toString()).get();
-
-        if (!readValue.exists) {
-            console.log(`No such supplier id: ${suppId}`);
-            return;
-        }
-
-        const { name, phone } = readValue.data();
-        console.log("Supplier: " + name + " Phone: " + phone);
-    } catch(error) {
-        console.log("Readsupplier error:", error);
-    }
-}
-
-async function readOrder(ordId) {
-    try {
-        const readValue = await db.collection(collections.orders).doc(ordId.toString()).get();
-
-        if (!readValue.exists) {
-            console.log(`No such order id: ${ordId}`);
-            return;
-        }
-
-        const { productId, quantity } = readValue.data();
-        console.log("Product ID: " + productId + " Quantity: " + quantity);
-    } catch(error) {
-        console.log("Readsupplier error:", error);
-    }
-}
-
-async function readProduct(prodId) {
-    try {
-        const readValue = await db.collection(collections.products).doc(prodId.toString()).get();
-
-        if (!readValue.exists) {
-            console.log(`No such product id: ${prodId}`);
-            return;
-        }
-
-        const { price, productCode, quantity } = readValue.data();
-        console.log("Price " + price + " Product code " + productCode + " Quantity: " + quantity);
-    } catch(error) {
-        console.log("Readsupplier error:", error);
-    }
-}
-
-async function readProductSuppliers(prodId) {
-    try {
-        const readValue = await db.collection(collections.productSuppliers).doc(prodId.toString()).get();
-
-        if (!readValue.exists) {
-            console.log(`No such product supplier id: ${prodId}`);
-            return;
-        }
-
-        const { supplierId } = readValue.data();
-        console.log("Supplier ID :" + supplierId);
-    } catch(error) {
-        console.log("Readsupplier error:", error);
-    }
-}
-
-//removeTestData();
-// listSuppliers();
-// listProducts();
-// listOrders();
-// listProductSuppliers();
-readSupplier(126);
-readOrder(100);
-readProduct(207);
-readProductSuppliers(471);
+// DELETE
+// del(collections.suppliers, 883);
